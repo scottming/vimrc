@@ -19,122 +19,122 @@ endfunction
 
 
 function! gitgutter#process_buffer(bufnr, force) abort
-  " NOTE a:bufnr is not necessarily the current buffer.
+" NOTE a:bufnr is not necessarily the current buffer.
 
-  if gitgutter#utility#is_active(a:bufnr)
+if gitgutter#utility#is_active(a:bufnr)
 
-    if has('patch-7.4.1559')
-      let l:Callback = function('gitgutter#process_buffer', [a:bufnr, a:force])
-    else
-      let l:Callback = {'function': 'gitgutter#process_buffer', 'arguments': [a:bufnr, a:force]}
-    endif
-    let how = s:setup_path(a:bufnr, l:Callback)
-    if [how] == ['async']  " avoid string-to-number conversion if how is a number
-      return
-    endif
+if has('patch-7.4.1559')
+  let l:Callback = function('gitgutter#process_buffer', [a:bufnr, a:force])
+else
+  let l:Callback = {'function': 'gitgutter#process_buffer', 'arguments': [a:bufnr, a:force]}
+endif
+let how = s:setup_path(a:bufnr, l:Callback)
+if [how] == ['async']  " avoid string-to-number conversion if how is a number
+  return
+endif
 
-    if a:force || s:has_fresh_changes(a:bufnr)
+if a:force || s:has_fresh_changes(a:bufnr)
 
-      let diff = 'NOT SET'
-      try
-        let diff = gitgutter#diff#run_diff(a:bufnr, g:gitgutter_diff_relative_to, 0)
-      catch /gitgutter not tracked/
-        call gitgutter#debug#log('Not tracked: '.gitgutter#utility#file(a:bufnr))
-      catch /gitgutter diff failed/
-        call gitgutter#debug#log('Diff failed: '.gitgutter#utility#file(a:bufnr))
-        call gitgutter#hunk#reset(a:bufnr)
-      endtry
+  let diff = 'NOT SET'
+  try
+    let diff = gitgutter#diff#run_diff(a:bufnr, g:gitgutter_diff_relative_to, 0)
+  catch /gitgutter not tracked/
+    call gitgutter#debug#log('Not tracked: '.gitgutter#utility#file(a:bufnr))
+  catch /gitgutter diff failed/
+    call gitgutter#debug#log('Diff failed: '.gitgutter#utility#file(a:bufnr))
+    call gitgutter#hunk#reset(a:bufnr)
+  endtry
 
-      if diff != 'async' && diff != 'NOT SET'
-        call gitgutter#diff#handler(a:bufnr, diff)
-      endif
-
-    endif
+  if diff != 'async' && diff != 'NOT SET'
+    call gitgutter#diff#handler(a:bufnr, diff)
   endif
+
+endif
+endif
 endfunction
 
 
 function! gitgutter#disable() abort
-  " get list of all buffers (across all tabs)
-  for bufnr in range(1, bufnr('$') + 1)
-    if buflisted(bufnr)
-      let file = expand('#'.bufnr.':p')
-      if !empty(file)
-        call s:clear(bufnr)
-      endif
-    endif
-  endfor
+" get list of all buffers (across all tabs)
+for bufnr in range(1, bufnr('$') + 1)
+if buflisted(bufnr)
+  let file = expand('#'.bufnr.':p')
+  if !empty(file)
+    call s:clear(bufnr)
+  endif
+endif
+endfor
 
-  let g:gitgutter_enabled = 0
+let g:gitgutter_enabled = 0
 endfunction
 
 function! gitgutter#enable() abort
-  let g:gitgutter_enabled = 1
-  call gitgutter#all(1)
+let g:gitgutter_enabled = 1
+call gitgutter#all(1)
 endfunction
 
 function! gitgutter#toggle() abort
-  if g:gitgutter_enabled
-    call gitgutter#disable()
-  else
-    call gitgutter#enable()
-  endif
+if g:gitgutter_enabled
+call gitgutter#disable()
+else
+call gitgutter#enable()
+endif
 endfunction
 
 
 function! gitgutter#buffer_disable() abort
-  let bufnr = bufnr('')
-  call gitgutter#utility#setbufvar(bufnr, 'enabled', 0)
-  call s:clear(bufnr)
+let bufnr = bufnr('')
+call gitgutter#utility#setbufvar(bufnr, 'enabled', 0)
+call s:clear(bufnr)
 endfunction
 
 function! gitgutter#buffer_enable() abort
-  let bufnr = bufnr('')
-  call gitgutter#utility#setbufvar(bufnr, 'enabled', 1)
-  call gitgutter#process_buffer(bufnr, 1)
+let bufnr = bufnr('')
+call gitgutter#utility#setbufvar(bufnr, 'enabled', 1)
+call gitgutter#process_buffer(bufnr, 1)
 endfunction
 
 function! gitgutter#buffer_toggle() abort
-  if gitgutter#utility#getbufvar(bufnr(''), 'enabled', 1)
-    call gitgutter#buffer_disable()
-  else
-    call gitgutter#buffer_enable()
-  endif
+if gitgutter#utility#getbufvar(bufnr(''), 'enabled', 1)
+call gitgutter#buffer_disable()
+else
+call gitgutter#buffer_enable()
+endif
 endfunction
 
 " }}}
 
 function! gitgutter#setup_maps()
-  if !g:gitgutter_map_keys
-    return
-  endif
+if !g:gitgutter_map_keys
+return
+endif
 
-  " Note hasmapto() and maparg() operate on the current buffer.
+" Note hasmapto() and maparg() operate on the current buffer.
 
-  let bufnr = bufnr('')
+let bufnr = bufnr('')
 
-  if gitgutter#utility#getbufvar(bufnr, 'mapped', 0)
-    return
-  endif
+if gitgutter#utility#getbufvar(bufnr, 'mapped', 0)
+return
+endif
 
-  if !hasmapto('<Plug>(GitGutterPrevHunk)') && maparg('[c', 'n') ==# ''
-    nmap <buffer> [c <Plug>(GitGutterPrevHunk)
-  endif
-  if !hasmapto('<Plug>(GitGutterNextHunk)') && maparg(']c', 'n') ==# ''
-    nmap <buffer> ]c <Plug>(GitGutterNextHunk)
-  endif
+if !hasmapto('<Plug>(GitGutterPrevHunk)') && maparg('[c', 'n') ==# ''
+nmap <buffer> [c <Plug>(GitGutterPrevHunk)
+endif
+if !hasmapto('<Plug>(GitGutterNextHunk)') && maparg(']c', 'n') ==# ''
+nmap <buffer> ]c <Plug>(GitGutterNextHunk)
+endif
 
-  if !hasmapto('<Plug>(GitGutterStageHunk)', 'v') && maparg('<Leader>hs', 'x') ==# ''
-    xmap <buffer> <Leader>hs <Plug>(GitGutterStageHunk)
+if !hasmapto('<Plug>(GitGutterStageHunk)', 'v') && maparg('<Leader>ghs', 'x') ==# ''
+    xmap <buffer> <Leader>ghs <Plug>(GitGutterStageHunk)
   endif
-  if !hasmapto('<Plug>(GitGutterStageHunk)', 'n') && maparg('<Leader>hs', 'n') ==# ''
-    nmap <buffer> <Leader>hs <Plug>(GitGutterStageHunk)
+  if !hasmapto('<Plug>(GitGutterStageHunk)', 'n') && maparg('<Leader>ghs', 'n') ==# ''
+    nmap <buffer> <Leader>ghs <Plug>(GitGutterStageHunk)
   endif
-  if !hasmapto('<Plug>(GitGutterUndoHunk)') && maparg('<Leader>hu', 'n') ==# ''
-    nmap <buffer> <Leader>hu <Plug>(GitGutterUndoHunk)
+  if !hasmapto('<Plug>(GitGutterUndoHunk)') && maparg('<Leader>ghu', 'n') ==# ''
+    nmap <buffer> <Leader>ghu <Plug>(GitGutterUndoHunk)
   endif
-  if !hasmapto('<Plug>(GitGutterPreviewHunk)') && maparg('<Leader>hp', 'n') ==# ''
-    nmap <buffer> <Leader>hp <Plug>(GitGutterPreviewHunk)
+  if !hasmapto('<Plug>(GitGutterPreviewHunk)') && maparg('<Leader>ghp', 'n') ==# ''
+    nmap <buffer> <Leader>ghp <Plug>(GitGutterPreviewHunk)
   endif
 
   if !hasmapto('<Plug>(GitGutterTextObjectInnerPending)') && maparg('ic', 'o') ==# ''
